@@ -48,23 +48,24 @@ get '/' => sub {
     case 'author' { $querystr = "@{[AUTHOR]} \"$query{author}\"" }
   }
   return $self->render(text => 'No valid query params given!', status => 400) unless ($querystr);
-  #print Dumper($querystr);
   # connecting to external base  
   my $conn = new ZOOM::Connection($config->{bases}->{$base}->{host}, 
           $config->{bases}->{$base}->{port},
           databaseName => $config->{bases}->{$base}->{db},
           preferredRecordSyntax => $format,
-          maximumRecordSize => $maxRecords,
           user => $config->{bases}->{$base}->{user},
           pass => $config->{bases}->{$base}->{pass});
-  print("server is '", $conn->option("serverImplementationName"), "'\n");
+  $self->app->log->debug("Logged in to server: ".$conn->option("serverImplementationName"));
 
   if ($conn->errcode() != 0) {
+    $self->app->log->error("Error connecting to external base: " . $conn->errmsg() );
     return $self->render(text => 'Error connecting to external base:\n' . $conn->errmsg(), status => 500);
   }
 
   my $rs = $conn->search_pqf($querystr);
   my $n = $rs->size();
+  $self->app->log->debug("Querystring: $querystr.");
+  $self->app->log->debug("Number of records found: $n.");
   return $self->render(text => 'No records found.', status => 200) unless ($n);
 
   my $xml = MARC::File::XML::header();
@@ -85,7 +86,3 @@ get '/' => sub {
 
 app->secret($config->{appsecret});
 app->start;
-__DATA__
-
-@@ counter.html.ep
-Counter: <%= session 'counter' %>
