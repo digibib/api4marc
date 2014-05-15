@@ -23,14 +23,13 @@ use constant {
 
 get '/' => sub {
   my $self = shift;
-  my $apikey     = $self->param('apikey');
+  my $apikey     = $self->param('apikey') || return $self->render(text => 'Missing API key!', status => 400);
   my $base       = $self->param('base') || return $self->render(text => 'Missing base param!', status => 400);
   my $format     = $self->param('format') || 'USMARC';
   my $maxRecords = $self->param('maxRecords') || 10;
   
-  if (!exists $config->{bases}->{$base}) {
-    return $self->render(text => 'Invalid base supplied!', status => 400);
-  }
+  return $self->render(text => 'Invalid base supplied!', status => 400) unless (exists $config->{bases}->{$base});
+  return $self->render(text => 'Invalid API key!', status => 400) unless $apikey == $config->{apikey};
 
   # building query
   my %query = ();
@@ -65,7 +64,7 @@ get '/' => sub {
   my $rs = $conn->search_pqf($querystr);
   my $n = $rs->size();
   $self->app->log->debug("Querystring: $querystr.");
-  $self->app->log->debug("Number of records found: $n.");
+  $self->app->log->debug("Number of records found: $n. maxRecords: $maxRecords");
   return $self->render(text => 'No records found.', status => 200) unless ($n);
 
   my $xml = MARC::File::XML::header();
@@ -75,7 +74,7 @@ get '/' => sub {
      my $marc = new_from_usmarc MARC::Record($raw);
      $marc->encoding("UTF-8");
      $xml .= MARC::File::XML::record( $marc );
-     #print $marc->as_xml_record();
+     last if $i >= $maxRecords;
   }
   $xml .= MARC::File::XML::footer();
 
@@ -84,5 +83,7 @@ get '/' => sub {
   $self->render(text => $xml, status => 200);
 };
 
+# add UTF-8 to xml type
+# app->types->type(xml => 'application/xml; charset=UTF-8');
 app->secret($config->{appsecret});
 app->start;
