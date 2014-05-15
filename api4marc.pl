@@ -29,7 +29,7 @@ get '/' => sub {
   my $maxRecords = $self->param('maxRecords') || 10;
   
   return $self->render(text => 'Invalid base supplied!', status => 400) unless (exists $config->{bases}->{$base});
-  return $self->render(text => 'Invalid API key!', status => 400) unless $apikey == $config->{apikey};
+  return $self->render(text => 'Invalid API key!', status => 400) unless $apikey eq $config->{apikey};
 
   # building query
   my %query = ();
@@ -54,7 +54,8 @@ get '/' => sub {
           preferredRecordSyntax => $format,
           user => $config->{bases}->{$base}->{user},
           pass => $config->{bases}->{$base}->{pass});
-  $self->app->log->debug("Logged in to server: ".$conn->option("serverImplementationName"));
+  $self->app->log->debug("Logged in to server $config->{bases}->{$base}->{host}: "
+    . $conn->option("serverImplementationName"));
 
   if ($conn->errcode() != 0) {
     $self->app->log->error("Error connecting to external base: " . $conn->errmsg() );
