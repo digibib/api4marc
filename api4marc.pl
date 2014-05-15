@@ -80,5 +80,9 @@ get '/' => sub {
   $self->render(text => $xml, status => 200);
 };
 
-app->secrets([$config->{appsecret}]);
+app->secret($config->{appsecret});
 app->start;
+__DATA__
+
+@@ counter.html.ep
+Counter: <%= session 'counter' %>
