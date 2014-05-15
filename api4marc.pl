@@ -25,7 +25,7 @@ get '/' => sub {
   my $self = shift;
   my $apikey     = $self->param('apikey');
   my $base       = $self->param('base') || return $self->render(text => 'Missing base param!', status => 400);
-  my $format     = $self->param('format') || 'usmarc';
+  my $format     = $self->param('format') || 'USMARC';
   my $maxRecords = $self->param('maxRecords') || 10;
   
   if (!exists $config->{bases}->{$base}) {
@@ -44,18 +44,21 @@ get '/' => sub {
   switch (%query) {
     case 'isbn'   { $querystr = "@{[ISBN]} $query{isbn}" }
     case 'ean'    { $querystr = "@{[EAN]} $query{ean}" }
-    case 'title'  { $querystr = "@{[TITLE]} $query{title}" }
-    case 'author' { $querystr = "@{[AUTHOR]} $query{author}" }
+    case 'title'  { $querystr = "@{[TITLE]} \"$query{title}\"" }
+    case 'author' { $querystr = "@{[AUTHOR]} \"$query{author}\"" }
   }
   return $self->render(text => 'No valid query params given!', status => 400) unless ($querystr);
   #print Dumper($querystr);
   # connecting to external base  
-  my $conn = new ZOOM::Connection($config->{bases}->{$base}->{host},
-    $config->{bases}->{$base}->{port}, databaseName => $config->{bases}->{$base}->{db});
-    $conn->option(preferredRecordSyntax => $format);
-    $conn->option(user => $config->{bases}->{$base}->{user}) if $config->{bases}->{$base}->{user};
-    $conn->option(pass => $config->{bases}->{$base}->{pass}) if $config->{bases}->{$base}->{pass};
-  #print("server is '", $conn->option("serverImplementationName"), "'\n");
+  my $conn = new ZOOM::Connection($config->{bases}->{$base}->{host}, 
+          $config->{bases}->{$base}->{port},
+          databaseName => $config->{bases}->{$base}->{db},
+          preferredRecordSyntax => $format,
+          maximumRecordSize => $maxRecords,
+          user => $config->{bases}->{$base}->{user},
+          pass => $config->{bases}->{$base}->{pass});
+  print("server is '", $conn->option("serverImplementationName"), "'\n");
+
   if ($conn->errcode() != 0) {
     return $self->render(text => 'Error connecting to external base:\n' . $conn->errmsg(), status => 500);
   }
