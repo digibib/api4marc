@@ -5,7 +5,7 @@ Uses perl's ZOOM module to handle the insanely ugly Z39.50 protocol
 
 ## INSTALL
 
-sudo apt-get install libnet-z3950-zoom-perl libmojolicious-perl libyaml-perl
+sudo apt-get install libmarc-xml-perl libnet-z3950-zoom-perl libmojolicious-perl libyaml-perl libswitch-perl
 
 copy config.yaml.example to config.yaml and add bases 
 
