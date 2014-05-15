@@ -1,0 +1,5 @@
+---
+base: dbname
+  url: example.com:port/dbname
+  user: username
+  pass: password
