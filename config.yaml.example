@@ -2,6 +2,8 @@
 appsecret: 'averysecretstring'
 bases:
   dbname:
-    url: example.com:port/dbname
+    host: example.com
+    port: port
+    db: dbname
     user: username
     pass: password

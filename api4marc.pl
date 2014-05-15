@@ -49,9 +49,9 @@ get '/' => sub {
   }
   return $self->render(text => 'No valid query params given!', status => 400) unless ($querystr);
   #print Dumper($querystr);
-
   # connecting to external base  
-  my $conn = new ZOOM::Connection($config->{bases}->{$base}->{url});
+  my $conn = new ZOOM::Connection($config->{bases}->{$base}->{host},
+    $config->{bases}->{$base}->{port}, databaseName => $config->{bases}->{$base}->{db});
     $conn->option(preferredRecordSyntax => $format);
     $conn->option(user => $config->{bases}->{$base}->{user}) if $config->{bases}->{$base}->{user};
     $conn->option(pass => $config->{bases}->{$base}->{pass}) if $config->{bases}->{$base}->{pass};
