@@ -7,49 +7,78 @@ use MARC::File::USMARC;
 use YAML qw(LoadFile);
 use Data::Dumper;
 use Mojolicious::Lite;
+use Switch;
 
+#ZOOM::Log::init_file("./zoom.log");
 # read config
 my $config = YAML::LoadFile('config.yaml');
+
+#z3950 queries
+use constant {
+    TITLE     => "\@attr 1=4",
+    ISBN      => "\@attr 1=7",
+    AUTHOR    => "\@attr 1=1003",
+    EAN       => "\@attr 1=1016",
+  };
 
 get '/' => sub {
   my $self = shift;
   my $apikey     = $self->param('apikey');
-  my $base       = $self->param('base') || die 'No base specified!';
+  my $base       = $self->param('base') || return $self->render(text => 'Missing base param!', status => 400);
   my $format     = $self->param('format') || 'usmarc';
   my $maxRecords = $self->param('maxRecords') || 10;
-  my $query      = $self->param('query') || die 'No query specified!';
+  
+  if (!exists $config->{bases}->{$base}) {
+    return $self->render(text => 'Invalid base supplied!', status => 400);
+  }
 
-if (!exists $config{$base}) {
-    die 'Invalid base supplied!'
-} 
-#ZOOM::Log::init_file("./zoom.log");
-my $conn = new ZOOM::Connection($config->{$base}->{url});
-  $conn->option(preferredRecordSyntax => $format);
-  $conn->option(user => $config->{$base}->{user}) if $config->{$base}->{user};
-  $conn->option(pass => $config->{$base}->{pass}) if $config->{$base}->{pass};
-#print("server is '", $conn->option("serverImplementationName"), "'\n");
-if ($conn->errcode() != 0) {
-  die("somthing went wrong: " . $conn->errmsg())
-}
+  # building query
+  my %query = ();
+  $query{'isbn'}   = $self->param('isbn') if $self->param('isbn');
+  $query{'ean'}    = $self->param('ean') if $self->param('ean');
+  $query{'title'}  = $self->param('title') if $self->param('title');
+  $query{'author'} = $self->param('author') if $self->param('author');
 
-# Query handling
-my $rs = $conn->search_pqf('@attr 1=7 978-178-005-109-3');
-my $n = $rs->size();
-#print "Found ", $n, " records\n";
-my $xml = MARC::File::XML::header();
-for my $i (1 .. $n) {
-   my $rec = $rs->record($i-1);
-   my $raw = $rec->raw();
-   my $marc = new_from_usmarc MARC::Record($raw);
-   $marc->encoding("UTF-8");
-   $xml .= MARC::File::XML::record( $marc );
-   #print $marc->as_xml_record();
-}
-$xml .= MARC::File::XML::footer();
+  # Query handling
+  my $querystr;
+  switch (%query) {
+    case 'isbn'   { $querystr = "@{[ISBN]} $query{isbn}" }
+    case 'ean'    { $querystr = "@{[EAN]} $query{ean}" }
+    case 'title'  { $querystr = "@{[TITLE]} $query{title}" }
+    case 'author' { $querystr = "@{[AUTHOR]} $query{author}" }
+  }
+  return $self->render(text => 'No valid query params given!', status => 400) unless ($querystr);
+  #print Dumper($querystr);
 
-#print $xml;
-$conn->destroy();
-$self->render(text => $xml);
+  connecting to external base  
+  my $conn = new ZOOM::Connection($config->{bases}->{$base}->{url});
+    $conn->option(preferredRecordSyntax => $format);
+    $conn->option(user => $config->{bases}->{$base}->{user}) if $config->{bases}->{$base}->{user};
+    $conn->option(pass => $config->{bases}->{$base}->{pass}) if $config->{bases}->{$base}->{pass};
+  #print("server is '", $conn->option("serverImplementationName"), "'\n");
+  if ($conn->errcode() != 0) {
+    return $self->render(text => 'Error connecting to external base:\n' . $conn->errmsg(), status => 500);
+  }
+
+  my $rs = $conn->search_pqf($querystr);
+  my $n = $rs->size();
+  return $self->render(text => 'No records found.', status => 200) unless ($n);
+
+  my $xml = MARC::File::XML::header();
+  for my $i (1 .. $n) {
+     my $rec = $rs->record($i-1);
+     my $raw = $rec->raw();
+     my $marc = new_from_usmarc MARC::Record($raw);
+     $marc->encoding("UTF-8");
+     $xml .= MARC::File::XML::record( $marc );
+     #print $marc->as_xml_record();
+  }
+  $xml .= MARC::File::XML::footer();
+
+  #print $xml;
+  $conn->destroy();
+  $self->render(text => $xml, status => 200);
 };
 
+app->secrets([$config->{appsecret}]);
 app->start;

@@ -1,5 +1,7 @@
 ---
-base: dbname
-  url: example.com:port/dbname
-  user: username
-  pass: password
+appsecret: 'averysecretstring'
+bases:
+  dbname:
+    url: example.com:port/dbname
+    user: username
+    pass: password
