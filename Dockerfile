@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     libswitch-perl \
     && rm -fr /var/lib/apt/lists/*
 
-ENV updated_source=2016-02-21
+ENV updated_source=2016-02-23
 
 COPY . /api4marc
 

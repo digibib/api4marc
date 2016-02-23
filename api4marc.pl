@@ -83,4 +83,5 @@ get '/' => sub {
 
 app->types->type(xml => 'application/xml; charset=UTF-8');
 app->secrets($config->{appsecret});
+app->log->level('error');
 app->start;
