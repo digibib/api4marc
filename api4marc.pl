@@ -85,5 +85,5 @@ get '/' => sub {
 };
 
 app->types->type(xml => 'application/xml; charset=UTF-8');
-app->secret($config->{appsecret});
+app->secrets($config->{appsecret});
 app->start;
