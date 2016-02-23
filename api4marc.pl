@@ -66,7 +66,7 @@ get '/' => sub {
   my $n = $rs->size();
   $self->app->log->debug("Querystring: $querystr.");
   $self->app->log->debug("Number of records found: $n. maxRecords: $maxRecords");
-  return $self->render(text => 'No records found.', status => 200) unless ($n);
+  return $self->render(text => 'No records found.', status => 404) unless ($n);
 
   my $xml = MARC::File::XML::header();
   for my $i (1 .. $n) {
