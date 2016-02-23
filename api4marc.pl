@@ -81,10 +81,9 @@ get '/' => sub {
 
   #print $xml;
   $conn->destroy();
-  $self->render(text => $xml, status => 200);
+  $self->render(text => $xml, status => 200, format => 'xml');
 };
 
-# add UTF-8 to xml type
-# app->types->type(xml => 'application/xml; charset=UTF-8');
+app->types->type(xml => 'application/xml; charset=UTF-8');
 app->secret($config->{appsecret});
 app->start;
