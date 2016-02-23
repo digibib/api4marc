@@ -22,13 +22,11 @@ use constant {
 
 get '/' => sub {
   my $self = shift;
-  my $apikey     = $self->param('apikey') || return $self->render(text => 'Missing API key!', status => 400);
   my $base       = $self->param('base') || return $self->render(text => 'Missing base param!', status => 400);
   my $format     = $self->param('format') || 'USMARC';
   my $maxRecords = $self->param('maxRecords') || 10;
   
   return $self->render(text => 'Invalid base supplied!', status => 400) unless (exists $config->{bases}->{$base});
-  return $self->render(text => 'Invalid API key!', status => 400) unless $apikey eq $config->{apikey};
 
   # building query
   my %query = ();
