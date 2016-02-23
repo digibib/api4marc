@@ -16,4 +16,4 @@ WORKDIR /api4marc
 
 EXPOSE 3000
 
-CMD perl api4marc.pl daemon
+ENTRYPOINT ./entrypoint.sh
