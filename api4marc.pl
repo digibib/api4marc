@@ -9,7 +9,6 @@ use Data::Dumper;
 use Mojolicious::Lite;
 use Switch;
 
-#ZOOM::Log::init_file("./zoom.log");
 # read config
 my $config = YAML::LoadFile('config.yaml');
 
