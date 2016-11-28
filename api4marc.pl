@@ -9,7 +9,6 @@ use YAML qw(LoadFile);
 use Data::Dumper;
 use Mojolicious::Lite;
 use Switch;
-use utf8;
 
 # read config
 my $config = YAML::LoadFile('config.yaml');
