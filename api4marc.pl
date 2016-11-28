@@ -2,12 +2,14 @@
 
 use ZOOM;
 use MARC::Record;
-use MARC::File::XML;
+#use MARC::File::XML;
+use MARC::File::XML ( BinaryEncoding => 'utf8', RecordFormat => 'UNIMARC' );
 use MARC::File::USMARC;
 use YAML qw(LoadFile);
 use Data::Dumper;
 use Mojolicious::Lite;
 use Switch;
+use utf8;
 
 # read config
 my $config = YAML::LoadFile('config.yaml');
@@ -50,7 +52,9 @@ get '/' => sub {
           databaseName => $config->{bases}->{$base}->{db},
           preferredRecordSyntax => $format,
           user => $config->{bases}->{$base}->{user},
-          pass => $config->{bases}->{$base}->{pass});
+          pass => $config->{bases}->{$base}->{pass},
+          charset => "UTF-8"); # request unicode encoding
+
   $self->app->log->debug("Logged in to server $config->{bases}->{$base}->{host}: "
     . $conn->option("serverImplementationName"));
 
@@ -69,8 +73,11 @@ get '/' => sub {
   for my $i (1 .. $n) {
      my $rec = $rs->record($i-1);
      my $raw = $rec->raw();
-     my $marc = new_from_usmarc MARC::Record($raw);
-     $marc->encoding("UTF-8");
+
+    # force leader pos 09 to be 'a', meaning that encoding is indeed unicode, as requested above
+    substr($raw, 9, 1, 'a');
+
+     my $marc = MARC::Record->new_from_usmarc($raw);
      $xml .= MARC::File::XML::record( $marc );
      last if $i >= $maxRecords;
   }
